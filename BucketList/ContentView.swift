@@ -17,46 +17,73 @@ struct ContentView: View {
     )
 
     @State private var viewModel = ViewModel()
+    @State private var mapHybrid = false
     
     var body: some View {
         
         if viewModel.isUnlocked{
-            MapReader{ proxy in
-                
-                
-                Map(initialPosition: startPosition){
-                    ForEach(viewModel.locations){ location in
-                        Annotation(location.name, coordinate: location.coordinate){
-                            Image(systemName: "star.circle")
-                                .resizable()
-                                .foregroundStyle(.red)
-                                .frame(width:44, height:44)
-                                .background(.white)
-                                .clipShape(.circle)
-                                .onLongPressGesture{
-                                    viewModel.selectedPlace = location
-                                }
+            
+            
+            VStack{
+                MapReader{ proxy in
+                    
+                    
+                    Map(initialPosition: startPosition){
+                        ForEach(viewModel.locations){ location in
+                            Annotation(location.name, coordinate: location.coordinate){
+                                Image(systemName: "star.circle")
+                                    .resizable()
+                                    .foregroundStyle(.red)
+                                    .frame(width:44, height:44)
+                                    .background(.white)
+                                    .clipShape(.circle)
+                                    .onLongPressGesture{
+                                        viewModel.selectedPlace = location
+                                    }
+                            }
+                            
+                        }
+                    }
+                    
+                    .mapStyle(mapHybrid ? .hybrid : .standard)
+                    .onTapGesture { position in
+                        
+                        if let coordinate = proxy.convert(position, from: .local){
+                            viewModel.addLocation(at: coordinate )
+                        }
+                        
+                        
+                        
+                    }
+                    .sheet(item: $viewModel.selectedPlace){ place in
+                        EditView(location: place){ newLocation in
+                            
+                            viewModel.update(location: newLocation)
                         }
                         
                     }
                 }
-                .onTapGesture { position in
+                
+                
+                HStack(){
                     
-                    if let coordinate = proxy.convert(position, from: .local){
-                        viewModel.addLocation(at: coordinate )
+                     
+                    Button(mapHybrid ? "Standard" : "Hybrid" ){
+                        mapHybrid.toggle()
                     }
-                    
+                    .padding()
+                    .background(.blue)
+                    .foregroundStyle(.white)
+                    .clipShape(.capsule)
                     
                     
                 }
-                .sheet(item: $viewModel.selectedPlace){ place in
-                    EditView(location: place){ newLocation in
-                        
-                        viewModel.update(location: newLocation)
-                    }
-                    
-                }
+                
+                
+                
             }
+            .background(Color.black.opacity(0.8))
+            
         }
         else{
             //Button
