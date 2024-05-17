@@ -17,14 +17,14 @@ struct ContentView: View {
     )
 
     @State private var viewModel = ViewModel()
-    @State private var mapHybrid = false
+   
     
     var body: some View {
         
         if viewModel.isUnlocked{
             
             
-            VStack{
+            NavigationStack{
                 MapReader{ proxy in
                     
                     
@@ -44,8 +44,8 @@ struct ContentView: View {
                             
                         }
                     }
+                    .mapStyle(viewModel.isHybrid)
                     
-                    .mapStyle(mapHybrid ? .hybrid : .standard)
                     .onTapGesture { position in
                         
                         if let coordinate = proxy.convert(position, from: .local){
@@ -62,22 +62,15 @@ struct ContentView: View {
                         }
                         
                     }
-                }
-                
-                
-                HStack(){
                     
-                     
-                    Button(mapHybrid ? "Standard" : "Hybrid" ){
-                        mapHybrid.toggle()
+                }
+                .toolbar{
+                    Button(viewModel.mapHybrid ? "Hybrid" : "Standard"){
+                        viewModel.mapHybrid.toggle()
                     }
-                    .padding()
-                    .background(.blue)
-                    .foregroundStyle(.white)
-                    .clipShape(.capsule)
-                    
-                    
                 }
+               
+                
                 
                 
                 
@@ -87,11 +80,21 @@ struct ContentView: View {
         }
         else{
             //Button
-            Button("Unlock Places", action: viewModel.authenticate)
+            Button("Unlock Places"){
+                Task{
+                    await viewModel.authenticate()
+                }
+                
+            }
                 .padding()
                 .background(.blue)
                 .foregroundStyle(.white)
                 .clipShape(.capsule)
+                .alert(isPresented: $viewModel.alertShown){
+                    Alert(title: Text(viewModel.alertTitle),
+                          message: Text(viewModel.alertMessage)
+                    )
+                }
             
             
         }

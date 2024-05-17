@@ -8,6 +8,7 @@ import CoreLocation
 import Foundation
 import LocalAuthentication
 import MapKit
+import _MapKit_SwiftUI
 
 
 extension ContentView{
@@ -15,9 +16,12 @@ extension ContentView{
     class ViewModel{
         private(set) var locations : [Location]
         var selectedPlace : Location?
-        var isUnlocked = true
+        var isUnlocked = false
         let savePath = URL.documentsDirectory.appending(path: "SavedPlaces")
-        
+        var mapHybrid = false
+        var alertShown = false
+        var alertMessage = ""
+        var alertTitle = "Error"
         
         init(){
             do{
@@ -29,6 +33,15 @@ extension ContentView{
                 locations = []
             }
         }
+        
+        var isHybrid : MapStyle{
+            guard mapHybrid else{
+                return .hybrid
+            }
+            return .standard
+            
+        }
+        
         
         func save(){
             do{
@@ -60,28 +73,57 @@ extension ContentView{
             
         }
         
-        func authenticate(){
+        func authenticate() async{
             let context = LAContext()
             var error: NSError?
             
             if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error){
                 let reason = "Please authenticate yourself to unlock your places"
-                context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason){
-                    success, authenticationError in
-                    
-                    if success{
-                        self.isUnlocked = true
-                    }else{
-                     //error
-                    }
-                    
-                    
-                    
-                }
+                do {
+                       let success = try await  context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason)
+                       if success {
+                           self.isUnlocked = true
+                       }
+                } catch( let error) {
+                       alertMessage = error.localizedDescription
+                       alertShown.toggle()
+                   }
+                
+//                context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason){
+//                    success, authenticationError in
+//                    
+//                        if success{
+//                            self.isUnlocked = true
+//                        }
+//                    
+//                    
+//                    else{
+//                     //error
+//                        if let error = error{
+//                            print("Face id error")
+//                            self.alertMessage = error.localizedDescription
+//                            self.alertShown = true
+//                            
+//                            
+//                        }
+//                        
+//                        
+//                    }
+//                    
+//                    
+//                    
+//                }
                 
             }
             else{
                 //No biometrics
+                if let error = error{
+                    print("Face id error")
+                    self.alertMessage = error.localizedDescription
+                    self.alertShown = true
+
+
+                }
                 
                 
                 
